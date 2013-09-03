@@ -6,7 +6,9 @@ import java.util.Map;
 import ola.OlaClient;
 import ola.proto.Ola.DmxData;
 import ola.proto.Ola.PluginListReply;
-import ola.proto.Ola.RegisterAction;
+import ola.proto.Ola.UniverseInfoReply;
+
+import com.neophob.ola2uart.tpm2.Tpm2Serial;
 
 public class Runner {
 
@@ -51,8 +53,10 @@ public class Runner {
         }*/
 
         Map<Integer, Integer> dmxToOffsetMap = new HashMap<Integer, Integer>();
-        dmxToOffsetMap.put(1, 0);	//dmx universe 1 map to offset 0
+        dmxToOffsetMap.put(0, 0);	//dmx universe 1 map to offset 0
+        dmxToOffsetMap.put(1, 1);
         dmxToOffsetMap.put(2, 1);
+        dmxToOffsetMap.put(3, 1);
         
         /*int i=0;
         while (i < args.length && args[i].startsWith("-")) {
@@ -68,33 +72,38 @@ public class Runner {
         }*/
         
         OlaClient olaClient = new OlaClient();
-        System.out.println("Try to connect to OLA");
-     /*   try {
-            //olaClient.connect("192.168.225.13", DEFAULT_PORT);
-            olaClient.connect(DEFAULT_HOST, DEFAULT_PORT);
-        } catch (Exception e) {
-        	System.out.println("failed to connect to the olad!");
-        	System.exit(1);
-        }
-       */
-        PluginListReply replyPlugins = olaClient.getPlugins();
         
+        PluginListReply replyPlugins = olaClient.getPlugins();        
         System.out.println(replyPlugins);        
-        //System.out.println("Universe 0 name: "+olaClient.getUniverseInfo(0).getUniverse(0).getName());
         
-        //DmxData reply = olaClient.getDmx(0);
-        //short[] dmxData = olaClient.convertFromUnsigned(reply.getData());
-        System.out.println("register for dmx universe 0");
-        olaClient.registerForDmx(0, RegisterAction.REGISTER);
+        for (Map.Entry<Integer,Integer> e: dmxToOffsetMap.entrySet()) {
+        	UniverseInfoReply u = olaClient.getUniverseInfo(e.getKey());
+            System.out.println(u);
+        }
+
+        Tpm2Serial serial = new Tpm2Serial("/dev/tty.usbmodem5781", 115200);
         
-        DmxData reply = olaClient.getDmx(0);
-        short[] dmxData = olaClient.convertFromUnsigned(reply.getData());
-        if (dmxData.length>2) {
-            System.out.println(dmxData[0]);
-            System.out.println(dmxData[1]);
-            System.out.println(dmxData[2]);        	
-        } else { 
-        	System.out.println("no dmx data");
+        while (1==1) {
+        	
+        	//todo grab universe 0+1, send data to teensy
+        	//todo grab universe 2+3, send data to teensy
+        	
+            System.out.println("Serial state: "+serial.connected());
+            serial.sendFrame((byte)0, new byte[10]);
+            for (Map.Entry<Integer,Integer> e: dmxToOffsetMap.entrySet()) {
+                DmxData reply = olaClient.getDmx(e.getKey());
+                short[] dmxData = olaClient.convertFromUnsigned(reply.getData());
+                if (dmxData.length>2) {
+                	System.out.print("Data for universe "+e.getKey()+": "+dmxData.length+"  -- ");
+                    System.out.print(dmxData[0]+" ");
+                    System.out.print(dmxData[1]+" ");
+                    System.out.println(dmxData[dmxData.length-1]);        	
+                } else { 
+                	System.out.println("no dmx data for universe "+e.getKey());
+                }
+            }
+            
+            Thread.sleep(500);
         }
 	}
 
