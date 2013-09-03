@@ -1,4 +1,4 @@
-package com.neophob.udp2i2c.stat;
+package com.neophob.ola2uart.stat;
 
 import java.util.concurrent.atomic.AtomicLong;
 

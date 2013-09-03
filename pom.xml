@@ -14,7 +14,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <protobuf.version>2.4.1</protobuf.version> 
     <netty.version>3.6.4.Final</netty.version>
-    <ola.version>0.0.3</ola.version>
+    <ola.version>0.0.1</ola.version>
   </properties>
   
   <build>
@@ -51,7 +51,7 @@
 					<execution>
 						<id>core.jar</id>
 						<configuration>
-							<file>lib/ola-java-client-0.0.3.jar</file>
+							<file>lib/ola-java-client-0.0.1.jar</file>
 							<groupId>ola</groupId>
 							<artifactId>ola-java-client</artifactId>
 							<version>${ola.version}</version>
