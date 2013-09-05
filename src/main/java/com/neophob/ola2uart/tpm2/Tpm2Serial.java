@@ -212,12 +212,12 @@ public class Tpm2Serial {
 	 * @return true if send was successful
 	 * @throws IllegalArgumentException the illegal argument exception
 	 */
-	public boolean sendFrame(byte ofs, byte data[]) throws IllegalArgumentException {
-		if (didFrameChange(ofs, data)) {
+	public boolean sendFrame(byte ofs, byte data[]) throws IllegalArgumentException {		
+		//if (didFrameChange(ofs, data)) {
 			writeSerialData(ofs, data);
-		}
+		//}
 
-		return false;
+		return true;
 	}
 	
 
@@ -241,6 +241,11 @@ public class Tpm2Serial {
 			LOG.log(Level.INFO, "Error sending serial data!", e);			
 		}		
 	}
+	
+	public Serial getPort() {
+		return port;
+	}
+
 
 
 }

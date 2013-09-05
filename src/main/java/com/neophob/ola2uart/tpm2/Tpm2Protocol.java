@@ -27,9 +27,9 @@ package com.neophob.ola2uart.tpm2;
  */
 public abstract class Tpm2Protocol {
 
-	private static final int HEADER_SIZE = 5;
+	private static final int HEADER_SIZE = 7;
 	
-    private static final byte START_BYTE = (byte) 0xC9;
+    private static final byte START_BYTE = (byte) 0x9C;
     private static final byte DATA_FRAME = (byte) 0xDA;
     private static final byte BLOCK_END = (byte) 0x36;
 
@@ -39,10 +39,10 @@ public abstract class Tpm2Protocol {
      * @param frame
      * @return
      */
-    public static byte[] doProtocol(int[] frame) {
+    public static byte[] doProtocol(short[] frame, int currentFrame, int totalFrame) {
         //3 colors per pixel
         int index = 0;
-        int frameSize = frame.length*3;
+        int frameSize = frame.length;
         byte[] outputBuffer = new byte[frameSize + HEADER_SIZE];
 
         //Start-Byte
@@ -57,11 +57,12 @@ public abstract class Tpm2Protocol {
         outputBuffer[index++] = frameSizeByteHigh;
         outputBuffer[index++] = frameSizeByteLow;
 
+        outputBuffer[index++] = (byte) currentFrame;
+        outputBuffer[index++] = (byte) totalFrame;
+
         //Raw Data
         for (int i = 0; i < frame.length; i++) {
-            outputBuffer[index++] = (byte) ((frame[i] >> 16) & 255);
-            outputBuffer[index++] = (byte) ((frame[i] >> 8) & 255);
-            outputBuffer[index++] = (byte) (frame[i] & 255);
+            outputBuffer[index++] = (byte) (frame[i  ] & 255);
         }
 
         //Block-End-Byte

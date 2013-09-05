@@ -72,7 +72,7 @@ public class Serial implements SerialPortEventListener {
   // defaults
 
   static String dname = "COM1";
-  static int drate = 9600;
+  static int drate = 115200;
   static char dparity = 'N';
   static int ddatabits = 8;
   static float dstopbits = 1;
