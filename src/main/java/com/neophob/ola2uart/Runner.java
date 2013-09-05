@@ -1,5 +1,6 @@
 package com.neophob.ola2uart;
 
+import java.net.ConnectException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.ConsoleHandler;
@@ -131,7 +132,18 @@ public class Runner {
         }
         
         LOG.finest("Init OLA Client");
-		OlaClient olaClient = new OlaClient();
+		OlaClient olaClient=null;
+		boolean oladConnectionAvailable = false;
+		while (!oladConnectionAvailable) {
+			try {
+				olaClient = new OlaClient();	
+			} catch (ConnectException e) {
+				LOG.info("no olad server available, retry in 1s...");
+				Thread.sleep(1000);
+			}
+			
+		}
+			
 		PluginListReply replyPlugins = olaClient.getPlugins();        
 		LOG.finest(replyPlugins.toString());        
 

@@ -42,16 +42,18 @@
 			<filtered>false</filtered>
 			<fileMode>0755</fileMode>
 		</file>
+ 		<file>
+			<source>${basedir}/lib/librxtxSerial.so</source>
+			<outputDirectory>/lib</outputDirectory>
+			<filtered>false</filtered>
+		</file>
+ 		<file>
+			<source>${basedir}/lib/librxtxSerial.jnilib</source>
+			<outputDirectory>/lib</outputDirectory>
+			<filtered>false</filtered>
+		</file>
  	</files>
 
-	<fileSets>
-		<!-- Copy all files, including binary (without conversion) -->
-<!-- 		<fileSet>
-			<directory>${basedir}/src/build/Arduino</directory>
-			<outputDirectory>/Arduino</outputDirectory>
-			<filtered>false</filtered>
-		</fileSet> -->
-	</fileSets>
 
 	<!-- collect external libs -->
 	<dependencySets>
