@@ -1,6 +1,5 @@
 package com.neophob.ola2uart;
 
-import java.net.ConnectException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.ConsoleHandler;
@@ -12,6 +11,7 @@ import ola.proto.Ola.PluginListReply;
 import ola.proto.Ola.UniverseInfoReply;
 
 import com.neophob.ola2uart.log.MyFormatter;
+import com.neophob.ola2uart.ola.OlaHelper;
 import com.neophob.ola2uart.stat.StatisticHelper;
 import com.neophob.ola2uart.tpm2.Tpm2Protocol;
 import com.neophob.ola2uart.tpm2.Tpm2Serial;
@@ -38,6 +38,8 @@ import com.neophob.ola2uart.tpm2.Tpm2Serial;
 public class Runner {
 
 	private static final String VERSION = "0.1";
+	
+	private static final int DEFAULT_FPS = 20;
 
 	private static final Logger LOG = Logger.getLogger(Runner.class.getName());
 	 
@@ -45,10 +47,11 @@ public class Runner {
 	private static final String ERR_MSG_MAPPING = "-u requires a DMX UNIVERSE to OFFSET mapping like 3:0";
 	
 	private static void displayHelp() {
-		LOG.info("Usage:\t\tRunner -u 0:0 -u 1:1 -d /dev/tty.usbmodem.1234");
+		LOG.info("Usage:\t\tRunner -u 0:0 -u 1:1 -d /dev/tty.usbmodem.1234 [-f 20]");
 		LOG.info("");
 		LOG.info("      \t\t -u define DMX Universe to offset mapping (can be used multiple times)");
 		LOG.info("      \t\t -d usb device that recieve the data using the tpm2.net protocol");
+		LOG.info("      \t\t -f desired framerate (fps)");
 		LOG.info("Make sure OLAD is running on 127.0.0.1:9010");
 	}
 
@@ -67,6 +70,8 @@ public class Runner {
 	 * 
 	 * -> parameter DMXUNIVERSE:PANEL_OFFSET
 	 * 
+	 * TODO fps definition...
+	 * 
 	 * @param args
 	 */
 	public static void main(String[] args) throws Exception {
@@ -84,6 +89,7 @@ public class Runner {
         	System.exit(1);
         }
 		
+		int fps = DEFAULT_FPS;
 		String serialDevice = "";
 		Map<Integer, Integer> dmxToOffsetMap = new HashMap<Integer, Integer>();
 
@@ -131,18 +137,7 @@ public class Runner {
         	LOG.info("  Map DMX Universe "+e.getKey()+" to destination offset "+e.getValue());
         }
         
-        LOG.finest("Init OLA Client");
-		OlaClient olaClient=null;
-		boolean oladConnectionAvailable = false;
-		while (!oladConnectionAvailable) {
-			try {
-				olaClient = new OlaClient();	
-			} catch (ConnectException e) {
-				LOG.info("no olad server available, retry in 1s...");
-				Thread.sleep(1000);
-			}
-			
-		}
+		OlaClient olaClient=OlaHelper.connectToOlad();
 			
 		PluginListReply replyPlugins = olaClient.getPlugins();        
 		LOG.finest(replyPlugins.toString());        
@@ -150,24 +145,25 @@ public class Runner {
 		LOG.finest("Verify DMX Universe");
 		for (Map.Entry<Integer,Integer> e: dmxToOffsetMap.entrySet()) {
 			UniverseInfoReply u = olaClient.getUniverseInfo(e.getKey());
-			LOG.finest(u.toString());
+			try {
+				LOG.finest(u.toString());
+			} catch (NullPointerException npe) {
+				LOG.severe("Universe "+e.getKey()+" does not exist, check your OLA configuration!");
+				System.exit(7);
+			}
 		}
 
+		LOG.finest("Initialize serial device...");
 		Tpm2Serial tpm2 = new Tpm2Serial(serialDevice, 115200);
 
 		while (true) {
-			//todo grab universe 0+1, send data to teensy
-			//todo grab universe 2+3, send data to teensy
-
 			if (!tpm2.connected()) {
 				LOG.severe("SERIAL DISCONNECT! ");
 				return;
 			}
 			
-			int currentUniverse=0;
-
 			try {
-				
+				int currentUniverse=0;				
 				for (Map.Entry<Integer,Integer> e: dmxToOffsetMap.entrySet()) {
 					DmxData reply = olaClient.getDmx(e.getKey());
 					short[] dmxData = olaClient.convertFromUnsigned(reply.getData());

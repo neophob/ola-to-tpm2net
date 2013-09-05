@@ -13,13 +13,13 @@ This enables to use your custom made lightning project together with OLA.
 ##Setup RPI
 
 Make sure you're using a hard float distribution and you installed a JRE.
+Make sure your OLA instance is configured properly, read: the universe ID you want to map needs to exist or the application will not start.
 
 ##Setup Teensy 3
 
 Tested on a Teensy 3, *might* work on other hardware too, but untested. Keep an eye on the memory usage!
 
 You need to have the [FastSPI LED2 Library installed](https://code.google.com/p/fastspi/downloads/list)
-
 
 
 ##Examples
