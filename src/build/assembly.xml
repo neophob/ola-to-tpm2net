@@ -37,13 +37,7 @@
 			<fileMode>0755</fileMode>
 		</file>
  		<file>
-			<source>${basedir}/src/build/trafficGen.sh</source>
-			<outputDirectory>/</outputDirectory>
-			<filtered>false</filtered>
-			<fileMode>0755</fileMode>
-		</file>
- 		<file>
-			<source>${basedir}/src/build/udp2i2c</source>
+			<source>${basedir}/src/build/ola-to-tpm2net</source>
 			<outputDirectory>/init.d</outputDirectory>
 			<filtered>false</filtered>
 			<fileMode>0755</fileMode>
@@ -52,16 +46,11 @@
 
 	<fileSets>
 		<!-- Copy all files, including binary (without conversion) -->
-		<fileSet>
+<!-- 		<fileSet>
 			<directory>${basedir}/src/build/Arduino</directory>
 			<outputDirectory>/Arduino</outputDirectory>
 			<filtered>false</filtered>
-		</fileSet>
-		<fileSet>
-			<directory>${basedir}/src/build/PixelController</directory>
-			<outputDirectory>/PixelController</outputDirectory>
-			<filtered>false</filtered>
-		</fileSet>
+		</fileSet> -->
 	</fileSets>
 
 	<!-- collect external libs -->

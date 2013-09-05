@@ -2,12 +2,15 @@ package com.neophob.ola2uart;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Logger;
 
 import ola.OlaClient;
 import ola.proto.Ola.DmxData;
 import ola.proto.Ola.PluginListReply;
 import ola.proto.Ola.UniverseInfoReply;
 
+import com.neophob.ola2uart.log.MyFormatter;
 import com.neophob.ola2uart.stat.StatisticHelper;
 import com.neophob.ola2uart.tpm2.Tpm2Protocol;
 import com.neophob.ola2uart.tpm2.Tpm2Serial;
@@ -35,16 +38,17 @@ public class Runner {
 
 	private static final String VERSION = "0.1";
 
-	private final static String DEFAULT_HOST = "localhost";
-
-	private final static int DEFAULT_PORT = 9010;
-
-	private OlaClient client;	
-
+	private static final Logger LOG = Logger.getLogger(Runner.class.getName());
+	 
+	private static final String ERR_MSG_DEVICE = "-d requires an string value";
+	private static final String ERR_MSG_MAPPING = "-u requires a DMX UNIVERSE to OFFSET mapping like 3:0";
+	
 	private static void displayHelp() {
-		System.out.println("Usage:\t\tRunner [-p port] [-b bus] [-d delay] [-t i2c_targets]\n");
-		System.out.println("Example:\tRunner -p 65506 -b 1 -d 10 -t 4:5:6:7");
-		System.out.println("\t");
+		LOG.info("Usage:\t\tRunner -u 0:0 -u 1:1 -d /dev/tty.usbmodem.1234");
+		LOG.info("");
+		LOG.info("      \t\t -u define DMX Universe to offset mapping (can be used multiple times)");
+		LOG.info("      \t\t -d usb device that recieve the data using the tpm2.net protocol");
+		LOG.info("Make sure OLAD is running on 127.0.0.1:9010");
 	}
 
 	/**
@@ -65,51 +69,86 @@ public class Runner {
 	 * @param args
 	 */
 	public static void main(String[] args) throws Exception {
-		System.out.println("OLA-to-UART Server v"+VERSION+" by Michael Vogt / neophob.com");
-		System.out.println("Read DMX universe from OLA and send the as TPM2 packet to the serial port");
+		LOG.setUseParentHandlers(false);
+        MyFormatter formatter = new MyFormatter();
+        ConsoleHandler handler = new ConsoleHandler();
+        handler.setFormatter(formatter);
+        LOG.addHandler(handler);
+        
+		LOG.info("OLA-to-TPM2.net Daemon v"+VERSION+" by Michael Vogt / neophob.com");
+		LOG.info("Read DMX universe from OLA and send the as TPM2 packet to the serial port");
 
-		/*        if (args.length < 2) {
+		if (args.length < 3) {
         	displayHelp();
         	System.exit(1);
-        }*/
-
+        }
+		
+		String serialDevice = "";
 		Map<Integer, Integer> dmxToOffsetMap = new HashMap<Integer, Integer>();
-		dmxToOffsetMap.put(0, 0);	//dmx universe 1 map to offset 0
-		dmxToOffsetMap.put(1, 1);
-		dmxToOffsetMap.put(2, 1);
-		dmxToOffsetMap.put(3, 1);
 
-		/*int i=0;
+		int i=0;
         while (i < args.length && args[i].startsWith("-")) {
         	String arg = args[i++];
 
-        	if (arg.equals("-p")) {
+        	if (arg.equals("-d")) {
         		if (i < args.length) { 
-        			port = Integer.parseInt(args[i++]);
+        			serialDevice = args[i++];
+        			if (serialDevice.length()<3) {
+            			LOG.severe(ERR_MSG_DEVICE);
+            			System.exit(5);        				
+        			}
         		} else {
-                    System.err.println("-port requires an integer value");
+        			LOG.severe(ERR_MSG_DEVICE);
+        			System.exit(5);
         		}
         	}
-        }*/
+        	
+        	if (arg.equals("-u")) {
+        		if (i < args.length) { 
+        			String rawConfig = args[i++];
+        			String[] data = rawConfig.split(":");
+        			if (data==null || data.length<2) {
+        				LOG.severe(ERR_MSG_MAPPING);
+        				System.exit(5);
+        			}
+        			dmxToOffsetMap.put(Integer.parseInt(data[0]), Integer.parseInt(data[1]));
+        		} else {
+        			LOG.severe(ERR_MSG_MAPPING);
+        			System.exit(5);
+        		}
+        	}        	
+        }
+        
+        if (dmxToOffsetMap.size()==0) {
+        	LOG.severe("No DMX/Offset Mapping information found! Exit now.");
+        	System.exit(6);
+        }
 
+        LOG.info("Using Serial Device <"+serialDevice+">");
+        LOG.info("Using DMX Universe to destional offset mapping: ");
+        for (Map.Entry<Integer, Integer> e: dmxToOffsetMap.entrySet()) {
+        	LOG.info("  Map DMX Universe "+e.getKey()+" to destination offset "+e.getValue());
+        }
+        
+        LOG.finest("Init OLA Client");
 		OlaClient olaClient = new OlaClient();
-
 		PluginListReply replyPlugins = olaClient.getPlugins();        
-		System.out.println(replyPlugins);        
+		LOG.finest(replyPlugins.toString());        
 
+		LOG.finest("Verify DMX Universe");
 		for (Map.Entry<Integer,Integer> e: dmxToOffsetMap.entrySet()) {
 			UniverseInfoReply u = olaClient.getUniverseInfo(e.getKey());
-			System.out.println(u);
+			LOG.finest(u.toString());
 		}
 
-		Tpm2Serial tpm2 = new Tpm2Serial("/dev/tty.usbmodem5781", 115200);
+		Tpm2Serial tpm2 = new Tpm2Serial(serialDevice, 115200);
 
 		while (true) {
 			//todo grab universe 0+1, send data to teensy
 			//todo grab universe 2+3, send data to teensy
 
 			if (!tpm2.connected()) {
-				System.out.println("SERIAL DISCONNECT!");
+				LOG.severe("SERIAL DISCONNECT! ");
 				return;
 			}
 			
@@ -121,6 +160,7 @@ public class Runner {
 					DmxData reply = olaClient.getDmx(e.getKey());
 					short[] dmxData = olaClient.convertFromUnsigned(reply.getData());
 					if (dmxData.length>2) {
+						//send data via serial port
 						tpm2.sendFrame((byte)currentUniverse, Tpm2Protocol.doProtocol(dmxData, currentUniverse, dmxToOffsetMap.size()));
 						
 						StatisticHelper.INSTANCE.incrementAndGetPacketsRecieved();
@@ -132,20 +172,20 @@ public class Runner {
 						} 
 
 					} else { 
-						System.out.println("no dmx data for universe "+e.getKey());
+						LOG.info("no dmx data for universe "+e.getKey());
 					}
 				}
 
 				
 			} catch (NullPointerException e) {
 				// happens if olad is restarted (for example), wait and retry!
-				System.out.println("NPE! wait");	
+				LOG.severe("NullPointer detected, sleep 1s and try to reconnect ...");	
 				Thread.sleep(1000);
 				
 				try {
 					olaClient = new OlaClient();
 				} catch (Exception e2) {
-					System.out.println("Failed to reinit OlaClient");
+					LOG.info("... failed to reinit OlaClient");
 				}
 			}
 

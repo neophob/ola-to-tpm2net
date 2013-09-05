@@ -49,7 +49,7 @@
 				<version>2.4</version>
 				<executions>
 					<execution>
-						<id>core.jar</id>
+						<id>ola-java-client</id>
 						<configuration>
 							<file>lib/ola-java-client-0.0.1.jar</file>
 							<groupId>ola</groupId>
@@ -61,7 +61,22 @@
 						<goals>
 							<goal>install-file</goal>
 						</goals>
+					</execution>
+					<execution>
+						<id>librxtx</id>
+						<configuration>
+							<file>lib/RXTXcomm.jar</file>
+							<groupId>org.qbang</groupId>
+							<artifactId>rxtx</artifactId>
+							<version>2.2</version>
+							<packaging>jar</packaging>
+						</configuration>
+						<phase>initialize</phase>
+						<goals>
+							<goal>install-file</goal>
+						</goals>
 					</execution>			
+								
 				</executions>
 			</plugin>
   	</plugins>
@@ -75,11 +90,6 @@
       <scope>test</scope>
     </dependency>    
     <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty</artifactId>
-      <version>${netty.version}</version>
-    </dependency>
-    <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
       <version>${protobuf.version}</version>
@@ -89,6 +99,11 @@
       <artifactId>ola-java-client</artifactId>
       <version>${ola.version}</version>
     </dependency>
+	<dependency>
+		<groupId>org.qbang</groupId>
+		<artifactId>rxtx</artifactId>
+		<version>2.2</version>
+	</dependency>    
       
   </dependencies>
 </project>

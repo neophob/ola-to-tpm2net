@@ -2,7 +2,7 @@
 #
 # Startup Script based on http://monocaffe.blogspot.ch/2011/04/java-daemon.html
 ### BEGIN INIT INFO
-# Provides:          udp2i2c
+# Provides:          ola-to-tpm2net
 # Required-Start:    $remote_fs $syslog $time
 # Required-Stop:     $remote_fs $syslog $time
 # Should-Start:      
@@ -10,17 +10,14 @@
 # Default-Start:     2 3 4 5
 # Default-Stop:
 # Short-Description: Regular background program processing daemon
-# Description:       cron is a standard UNIX program that runs user-specified 
-#                    programs at periodic scheduled times. vixie cron adds a 
-#                    number of features to the basic UNIX cron, including better
-#                    security and more powerful configuration options.
+# Description:       graps DMX data from OLA and send it to the serial port 
 ### END INIT INFO
 
 JAVA_HOME="/usr/local/java/"
 args="-p 65506 -b 1 -t 4 -d 5"
-application_dir="/home/pi/udp2i2c/"
-logfile="${application_dir}udp2i2c.log"
-runnable="com.neophob.udp2i2c.Runner"
+application_dir="/home/pi/ola-to-tpm2net/"
+logfile="${application_dir}ola-to-tpm2net.log"
+runnable="com.neophob.ola2uart.Runner"
 pid=""
 
 do_start () {
@@ -34,7 +31,7 @@ do_start () {
         fi
     fi
 
-    /usr/bin/logger start udp2i2c daemon
+    /usr/bin/logger start ola-to-tpm2net daemon
 
     local path="${application_dir}lib/*"
     local opts=""
