@@ -13,6 +13,7 @@ import ola.proto.Ola.UniverseInfoReply;
 import com.neophob.ola2uart.log.MyFormatter;
 import com.neophob.ola2uart.ola.OlaHelper;
 import com.neophob.ola2uart.stat.StatisticHelper;
+import com.neophob.ola2uart.tpm2.NoSerialPortFoundException;
 import com.neophob.ola2uart.tpm2.Tpm2Protocol;
 import com.neophob.ola2uart.tpm2.Tpm2Serial;
 
@@ -89,6 +90,7 @@ public class Runner {
         	System.exit(1);
         }
 		
+		Tpm2Serial tpm2 = null;
 		int fps = DEFAULT_FPS;
 		String serialDevice = "";
 		Map<Integer, Integer> dmxToOffsetMap = new HashMap<Integer, Integer>();
@@ -154,7 +156,11 @@ public class Runner {
 		}
 
 		LOG.finest("Initialize serial device...");
-		Tpm2Serial tpm2 = new Tpm2Serial(serialDevice, 115200);
+		try {
+			tpm2 = new Tpm2Serial(serialDevice, 115200);
+		} catch (NoSerialPortFoundException e) {
+			LOG.severe("Failed to open serial port!");
+		}
 
 		while (true) {
 			if (!tpm2.connected()) {

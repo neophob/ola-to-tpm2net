@@ -152,9 +152,10 @@ public class Tpm2Serial {
 	 */
 	private void openPort(String portName) throws NoSerialPortFoundException {
 		try {
-			port = new Serial(portName, this.baud, ' ', 8, 1);			
+			port = new Serial(portName, this.baud, 'N', 8, 1);			
 			port.output.write("PXL".getBytes());
 		} catch (Exception e) {	
+			e.printStackTrace();
 			LOG.log(Level.WARNING, "Failed to open port {0}: {1}", new Object[] {portName, e});
 			if (port != null) {
 				port.stop();        					
