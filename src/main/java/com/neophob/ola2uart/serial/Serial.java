@@ -146,7 +146,6 @@ public class Serial implements SerialPortEventListener {
       Enumeration<?> portList = CommPortIdentifier.getPortIdentifiers();
       while (portList.hasMoreElements()) {
     	  
-    	  System.out.println("enter loop "+portList);
         CommPortIdentifier portId = (CommPortIdentifier) portList.nextElement();
         if (portId.getPortType() == CommPortIdentifier.PORT_SERIAL) {
           //System.out.println("found " + portId.getName());

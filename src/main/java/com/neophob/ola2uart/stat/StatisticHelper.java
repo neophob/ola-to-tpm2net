@@ -15,13 +15,23 @@ public enum StatisticHelper {
 
 	private AtomicLong packetsRecieved = new AtomicLong();
 	private AtomicLong errors = new AtomicLong();
-	
+	private AtomicLong sendBytes = new AtomicLong();
+	private AtomicLong frameCount = new AtomicLong();
+
+	public long incrementAndGetFrameCount() {
+		return frameCount.incrementAndGet();
+	}
+
 	public long incrementAndGetPacketsRecieved() {
 		return packetsRecieved.incrementAndGet();
 	}
 
 	public long incrementAndGetError() {
 		return errors.incrementAndGet();
+	}
+
+	public long updateSendBytes(long delta) {
+		return sendBytes.addAndGet(delta);
 	}
 	
 	public long getErrorCount() {
@@ -30,6 +40,14 @@ public enum StatisticHelper {
 	
 	public long getPacketCount() {
 		return packetsRecieved.get();
+	}
+	
+	public long getSentBytes() {
+		return sendBytes.get();
+	}
+	
+	public long getFrameCount() {
+		return frameCount.get();
 	}
 
 }

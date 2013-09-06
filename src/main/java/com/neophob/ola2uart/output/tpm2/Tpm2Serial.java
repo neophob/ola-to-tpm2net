@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with PixelController.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.neophob.ola2uart.tpm2;
+package com.neophob.ola2uart.output.tpm2;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -213,7 +213,8 @@ public class Tpm2Serial {
 	 * @return true if send was successful
 	 * @throws IllegalArgumentException the illegal argument exception
 	 */
-	public boolean sendFrame(byte ofs, byte data[]) throws IllegalArgumentException {		
+	public boolean sendFrame(byte ofs, byte data[]) throws IllegalArgumentException {
+		//TODO make sure the last image is sent if there is a change
 		//if (didFrameChange(ofs, data)) {
 			writeSerialData(ofs, data);
 		//}

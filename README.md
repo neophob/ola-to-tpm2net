@@ -24,15 +24,10 @@ You need to have the [FastSPI LED2 Library installed](https://code.google.com/p/
 
 ##Examples
 
-Listen on port 65506, use i2c bus 1 (common for rpi model b rev002) and send data to i2c address nr. 4:
+Map DMX Universe 10 to offset 0, Universe 11 to offset 1 and Universe 12 to offset 2, send data to /dev/ttyACM0.
 
-	pi@raspberrypi ~/udp2i2c $ ./run.sh -p 65506 -b 1 -d 5 -t 4 
-	UDP-to-I2c Server v0.1 by Michael Vogt / neophob.com
-	Bridge a TPM2Net UDP packet to I2C
-	Listening on port 65506, using i2c bus 1, i2c target address:
-	    4 
+	./run.sh -u 10:0 -u 11:1 -u 12:2 -d /dev/ttyACM0 
 
-TODO
 
 ## Install Daemon on RPI (run on boot)
 

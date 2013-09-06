@@ -12,10 +12,11 @@ import ola.proto.Ola.UniverseInfoReply;
 
 import com.neophob.ola2uart.log.MyFormatter;
 import com.neophob.ola2uart.ola.OlaHelper;
+import com.neophob.ola2uart.output.IOutput;
+import com.neophob.ola2uart.output.OutputNet;
+import com.neophob.ola2uart.output.OutputSerial;
+import com.neophob.ola2uart.output.tpm2.Tpm2Protocol;
 import com.neophob.ola2uart.stat.StatisticHelper;
-import com.neophob.ola2uart.tpm2.NoSerialPortFoundException;
-import com.neophob.ola2uart.tpm2.Tpm2Protocol;
-import com.neophob.ola2uart.tpm2.Tpm2Serial;
 
 /**
  * TODO: 
@@ -41,18 +42,23 @@ public class Runner {
 	private static final String VERSION = "0.1";
 	
 	private static final int DEFAULT_FPS = 20;
+	private static final long WARNING_NO_DMX_DATA_TIMEOUT = 60000;
+	private static final long STATISTIC_OUTPUT_TIMEOUT = 30000;
 
 	private static final Logger LOG = Logger.getLogger(Runner.class.getName());
 	 
 	private static final String ERR_MSG_DEVICE = "-d requires an string value";
 	private static final String ERR_MSG_MAPPING = "-u requires a DMX UNIVERSE to OFFSET mapping like 3:0";
 	
+	private static boolean debugOutput=false;
+	
 	private static void displayHelp() {
-		LOG.info("Usage:\t\tRunner -u 0:0 -u 1:1 -d /dev/tty.usbmodem.1234 [-f 20]");
+		LOG.info("Usage:\tRunner -u 0:0 -u 1:1 -d /dev/tty.usbmodem.1234 [-f 20]");
 		LOG.info("");
-		LOG.info("      \t\t -u define DMX Universe to offset mapping (can be used multiple times)");
-		LOG.info("      \t\t -d usb device that recieve the data using the tpm2.net protocol");
-		LOG.info("      \t\t -f desired framerate (fps)");
+		LOG.info("      \t -u define DMX Universe to offset mapping (can be used multiple times)");
+		LOG.info("      \t -d usb device that recieve the data using the tpm2.net protocol");
+		LOG.info("      \t -f desired framerate (fps)");
+		LOG.info("      \t -v enable verbose output");
 		LOG.info("Make sure OLAD is running on 127.0.0.1:9010");
 	}
 
@@ -75,7 +81,16 @@ public class Runner {
 	 * 
 	 * @param args
 	 */
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) throws Exception {		
+		int fps = DEFAULT_FPS;
+		Map<Integer, Integer> dmxToOffsetMap = new HashMap<Integer, Integer>();
+		long lastErrorMessage=0;
+		long lastDebugOutput=0;		
+		long startTime;
+		String serialDevice = "";
+		int netPort = -1;
+		IOutput output;
+
 		LOG.setUseParentHandlers(false);
         MyFormatter formatter = new MyFormatter();
         ConsoleHandler handler = new ConsoleHandler();
@@ -89,12 +104,7 @@ public class Runner {
         	displayHelp();
         	System.exit(1);
         }
-		
-		Tpm2Serial tpm2 = null;
-		int fps = DEFAULT_FPS;
-		String serialDevice = "";
-		Map<Integer, Integer> dmxToOffsetMap = new HashMap<Integer, Integer>();
-
+				
 		int i=0;
         while (i < args.length && args[i].startsWith("-")) {
         	String arg = args[i++];
@@ -110,6 +120,20 @@ public class Runner {
         			LOG.severe(ERR_MSG_DEVICE);
         			System.exit(5);
         		}
+        	}
+
+        	if (arg.equals("-p")) {
+        		if (i < args.length) { 
+        			netPort = Integer.parseInt(args[i++]);
+        		} else {
+        			LOG.severe(ERR_MSG_DEVICE);
+        			System.exit(5);
+        		}
+        	}
+        	
+        	if (arg.equals("-v")) {
+        		LOG.info("enable verbose mode");
+        		debugOutput = true;
         	}
         	
         	if (arg.equals("-u")) {
@@ -132,8 +156,20 @@ public class Runner {
         	LOG.severe("No DMX/Offset Mapping information found! Exit now.");
         	System.exit(6);
         }
+        
+        if (serialDevice.isEmpty() && netPort==-1) {
+        	LOG.severe("No Output Port defined! Exit now.");
+        	System.exit(7);        	
+        }
 
-        LOG.info("Using Serial Device <"+serialDevice+">");
+        //init output
+        if (netPort==-1) {
+            output = new OutputSerial(serialDevice, debugOutput);        	
+        } else {
+            output = new OutputNet(netPort);
+        }
+        
+        
         LOG.info("Using DMX Universe to destional offset mapping: ");
         for (Map.Entry<Integer, Integer> e: dmxToOffsetMap.entrySet()) {
         	LOG.info("  Map DMX Universe "+e.getKey()+" to destination offset "+e.getValue());
@@ -144,7 +180,7 @@ public class Runner {
 		PluginListReply replyPlugins = olaClient.getPlugins();        
 		LOG.finest(replyPlugins.toString());        
 
-		LOG.finest("Verify DMX Universe");
+		LOG.info("Verify DMX Universe");
 		for (Map.Entry<Integer,Integer> e: dmxToOffsetMap.entrySet()) {
 			UniverseInfoReply u = olaClient.getUniverseInfo(e.getKey());
 			try {
@@ -155,41 +191,59 @@ public class Runner {
 			}
 		}
 
-		LOG.finest("Initialize serial device...");
-		try {
-			tpm2 = new Tpm2Serial(serialDevice, 115200);
-		} catch (NoSerialPortFoundException e) {
-			LOG.severe("Failed to open serial port!");
-		}
 
+		LOG.info("enter main loop...");
+		startTime = System.currentTimeMillis();
 		while (true) {
-			if (!tpm2.connected()) {
-				LOG.severe("SERIAL DISCONNECT! ");
-				return;
-			}
 			
 			try {
 				int currentUniverse=0;				
 				for (Map.Entry<Integer,Integer> e: dmxToOffsetMap.entrySet()) {
-					DmxData reply = olaClient.getDmx(e.getKey());
-					short[] dmxData = olaClient.convertFromUnsigned(reply.getData());
-					if (dmxData.length>2) {
+					long t1 = System.currentTimeMillis();
+					DmxData reply = olaClient.getDmx(e.getKey());					
+					long t2 = System.currentTimeMillis()-t1;
+					short[] dmxData = olaClient.convertFromUnsigned(reply.getData());					
+					
+					if (debugOutput) {
+						debugln("Time to get data from universe "+e.getKey()+": "+t2+"ms");
+					}
+					
+					if (dmxData.length>0) {
 						//send data via serial port
-						tpm2.sendFrame((byte)currentUniverse, Tpm2Protocol.doProtocol(dmxData, currentUniverse, dmxToOffsetMap.size()));
+						
+						debug(StatisticHelper.INSTANCE.getFrameCount()+" send "+dmxData.length+" bytes to universe "+currentUniverse);
+												
+						byte[] data = Tpm2Protocol.doProtocol(dmxData, currentUniverse, dmxToOffsetMap.size());
+						output.sendData(currentUniverse, data);
 						
 						StatisticHelper.INSTANCE.incrementAndGetPacketsRecieved();
+						StatisticHelper.INSTANCE.updateSendBytes(dmxData.length);
 						currentUniverse++;
 
-						Thread.sleep(5);
-						while (tpm2.getPort().available() > 0) {
-							System.out.println(tpm2.getPort().readString());
-						} 
+						debugln("... done");
+						if (System.currentTimeMillis()-lastDebugOutput > STATISTIC_OUTPUT_TIMEOUT) {
+							LOG.info(" sent "+StatisticHelper.INSTANCE.getPacketCount()+" packages ("+(StatisticHelper.INSTANCE.getSentBytes()/1024)+" kb), errors: "
+									+StatisticHelper.INSTANCE.getErrorCount());						
+							lastDebugOutput = System.currentTimeMillis();
+						}
+						
+//						Thread.sleep(2);
 
-					} else { 
-						LOG.info("no dmx data for universe "+e.getKey());
+					} else {
+						debugln("no data found for universe "+e.getKey());
+						if (System.currentTimeMillis()-lastErrorMessage > WARNING_NO_DMX_DATA_TIMEOUT) {
+							LOG.info("no dmx data for universe "+e.getKey());						
+							lastErrorMessage = System.currentTimeMillis();
+						}
 					}
 				}
-
+				long cnt = StatisticHelper.INSTANCE.incrementAndGetFrameCount();
+				if (cnt % 20 == 0) {
+					long tdiff = (System.currentTimeMillis() - startTime) / 1000;
+					if (tdiff>0) {
+						System.out.println("FPS: "+ (cnt/tdiff));						
+					}
+				}
 				
 			} catch (NullPointerException e) {
 				// happens if olad is restarted (for example), wait and retry!
@@ -204,6 +258,18 @@ public class Runner {
 			}
 
 		}
+	}
+	
+	private static void debugln(String s) {
+		if (debugOutput) {
+			System.out.println(s);
+		}		
+	}
+
+	private static void debug(String s) {
+		if (debugOutput) {
+			System.out.print(s);
+		}		
 	}
 
 }

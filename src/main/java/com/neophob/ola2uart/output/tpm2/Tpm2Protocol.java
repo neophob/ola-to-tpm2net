@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with PixelController.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.neophob.ola2uart.tpm2;
+package com.neophob.ola2uart.output.tpm2;
 
 
 /**
