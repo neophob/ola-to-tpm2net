@@ -82,14 +82,13 @@ public class Runner {
 	 * @param args
 	 */
 	public static void main(String[] args) throws Exception {		
-		int fps = DEFAULT_FPS;
-		Map<Integer, Integer> dmxToOffsetMap = new HashMap<Integer, Integer>();
 		long lastErrorMessage=0;
 		long lastDebugOutput=0;		
-		long startTime;
 		String serialDevice = "";
 		int netPort = -1;
 		IOutput output;
+		int fps = DEFAULT_FPS;
+		Map<Integer, Integer> dmxToOffsetMap = new HashMap<Integer, Integer>();
 
 		LOG.setUseParentHandlers(false);
         MyFormatter formatter = new MyFormatter();
@@ -126,11 +125,20 @@ public class Runner {
         		if (i < args.length) { 
         			netPort = Integer.parseInt(args[i++]);
         		} else {
-        			LOG.severe(ERR_MSG_DEVICE);
+        			LOG.severe("-p requires a integer value");
         			System.exit(5);
         		}
         	}
-        	
+
+        	if (arg.equals("-f")) {
+        		if (i < args.length) { 
+        			fps = Integer.parseInt(args[i++]);
+        		} else {
+        			LOG.severe("-f requires a integer value");
+        			System.exit(5);
+        		}
+        	}
+
         	if (arg.equals("-v")) {
         		LOG.info("enable verbose mode");
         		debugOutput = true;
@@ -191,9 +199,9 @@ public class Runner {
 			}
 		}
 
-
+		Framerate framerate = new Framerate(fps);
+		
 		LOG.info("enter main loop...");
-		startTime = System.currentTimeMillis();
 		while (true) {
 			
 			try {
@@ -227,8 +235,6 @@ public class Runner {
 							lastDebugOutput = System.currentTimeMillis();
 						}
 						
-//						Thread.sleep(2);
-
 					} else {
 						debugln("no data found for universe "+e.getKey());
 						if (System.currentTimeMillis()-lastErrorMessage > WARNING_NO_DMX_DATA_TIMEOUT) {
@@ -237,13 +243,9 @@ public class Runner {
 						}
 					}
 				}
+				
 				long cnt = StatisticHelper.INSTANCE.incrementAndGetFrameCount();
-				if (cnt % 20 == 0) {
-					long tdiff = (System.currentTimeMillis() - startTime) / 1000;
-					if (tdiff>0) {
-						System.out.println("FPS: "+ (cnt/tdiff));						
-					}
-				}
+				framerate.waitForFps(cnt);
 				
 			} catch (NullPointerException e) {
 				// happens if olad is restarted (for example), wait and retry!
