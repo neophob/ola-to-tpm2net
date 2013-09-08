@@ -12,7 +12,7 @@ import java.util.logging.Logger;
  * @author michu
  *
  */
-public class OutputNet implements IOutput {
+public class OutputNet extends AbstractOutput {
 
 	private static final Logger LOG = Logger.getLogger(OutputNet.class.getName());
 
@@ -27,6 +27,11 @@ public class OutputNet implements IOutput {
 	}
 
 	public void sendData(int ofs, byte[] data) {
+		
+		if (!didFrameChange(ofs, data)) {
+			return;
+		}
+		
 		packet.setData(data);
 		packet.setLength(data.length);
 		try {

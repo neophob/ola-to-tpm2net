@@ -10,7 +10,7 @@ import com.neophob.ola2uart.output.tpm2.Tpm2Serial;
  * @author michu
  *
  */
-public class OutputSerial implements IOutput {
+public class OutputSerial extends AbstractOutput {
 
 	private static final Logger LOG = Logger.getLogger(OutputSerial.class.getName());
 	
@@ -35,7 +35,9 @@ public class OutputSerial implements IOutput {
 			return;
 		}
 
-		tpm2.sendFrame((byte)ofs, data);
+		if (didFrameChange(ofs, data)) {
+			tpm2.sendFrame((byte)ofs, data);			
+		}
 		
 		if (debugOutput) {
 			while (tpm2.getPort().available() > 0) {			
