@@ -7,7 +7,7 @@
 Grab DMX data from [OLA](http://www.opendmx.net/index.php/Open_Lighting_Architecture) and send it out via serial port using
 the [TPM2Net](http://www.ledstyles.de/ftopic18969.html) protocol.
 
-This enables to use your custom made lightning project together with OLA.
+This enables to use your custom made lightning project together with OLA. This application must run on the same machine as OLA is running.
 
 
 ##Setup Teensy 3
