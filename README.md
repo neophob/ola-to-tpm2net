@@ -14,7 +14,7 @@ This enables to use your custom made lightning project together with OLA. This a
 
 Tested on a Teensy 3, *might* work on other hardware too, but untested. Keep an eye on the memory usage!
 
-You need to have the [FastSPI LED2 Library](https://code.google.com/p/fastspi/downloads/list) installed. Grab the [TPM2Net Arduino firmware](https://github.com/neophob/PixelController/tree/develop/integration/ArduinoFw/tpm2serial) from my PixelController repo.
+You need to have the [FastSPI LED2 Library](https://code.google.com/p/fastspi/downloads/list) installed. Grab the TPM2Net Arduino firmware from the `arduino` directory.
 
 
 ##Examples
