@@ -18,11 +18,8 @@
  */
 package com.neophob.ola2uart.output.tpm2;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.zip.Adler32;
 
 import com.neophob.ola2uart.serial.Serial;
 
@@ -48,12 +45,6 @@ public class Tpm2Serial {
 	/** The port. */
 	private Serial port;
 
-	/** map to store checksum of image. */
-	protected Map<Byte, Long> lastDataMap = new HashMap<Byte, Long>();
-		
-	protected static Adler32 adler = new Adler32();
-
-
 	/**
 	 * Create a new instance to communicate with the rainbowduino.
 	 *
@@ -66,10 +57,7 @@ public class Tpm2Serial {
 		
 		LOG.log(Level.INFO,	"Initialize Tpm2Serial lib v{0}", VERSION);
 		
-//		this.app = app;
-//		this.app.registerDispose(this);
-		this.baud = baud;
-		
+		this.baud = baud;		
 		String serialPortName="";	
 		
 		if (portName!=null && !portName.isEmpty()) {
@@ -181,32 +169,6 @@ public class Tpm2Serial {
 
 
 	
-	/**
-	 * get md5 hash out of an image. used to check if the image changed
-	 *
-	 * @param data the data
-	 * @return true if send was successful
-	 */
-	private boolean didFrameChange(byte ofs, byte data[]) {
-		adler.reset();
-		adler.update(data);
-		long l = adler.getValue();
-		
-		if (!lastDataMap.containsKey(ofs)) {
-			//first run
-			lastDataMap.put(ofs, l);
-			return true;			
-		}
-
-		if (lastDataMap.get(ofs) == l) {
-			//last frame was equal current frame, do not send it!
-			//log.log(Level.INFO, "do not send frame to {0}", addr);
-			return false;
-		}
-		//update new hash
-		lastDataMap.put(ofs, l);
-		return true;
-	}
 	
 	/**
 	 * @param data byte[3*8*4]
@@ -214,11 +176,7 @@ public class Tpm2Serial {
 	 * @throws IllegalArgumentException the illegal argument exception
 	 */
 	public boolean sendFrame(byte ofs, byte data[]) throws IllegalArgumentException {
-		//TODO make sure the last image is sent if there is a change
-		//if (didFrameChange(ofs, data)) {
-			writeSerialData(ofs, data);
-		//}
-
+		writeSerialData(ofs, data);
 		return true;
 	}
 	

@@ -56,9 +56,8 @@ public abstract class Tpm2Protocol {
         byte frameSizeByteLow = (byte) (frameSize & 0xff);
         outputBuffer[index++] = frameSizeByteHigh;
         outputBuffer[index++] = frameSizeByteLow;
-
-        outputBuffer[index++] = (byte) currentFrame;
-        outputBuffer[index++] = (byte) totalFrame;
+        outputBuffer[index++] = (byte) (currentFrame&0xff);
+        outputBuffer[index++] = (byte) (totalFrame&0xff);
 
         //Raw Data
         for (int i = 0; i < frame.length; i++) {

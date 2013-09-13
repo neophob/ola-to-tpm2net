@@ -41,7 +41,7 @@ public class OutputSerial extends AbstractOutput {
 		
 		if (debugOutput) {
 			while (tpm2.getPort().available() > 0) {			
-				System.out.println("<<< "+tpm2.getPort().readString());
+				System.out.println("<<< ("+tpm2.getPort().readString()+")");
 			} 			
 		}
 

@@ -34,7 +34,10 @@ public class Runner {
 
 	private static final long WARNING_NO_DMX_DATA_TIMEOUT = 60000;
 	private static final long STATISTIC_OUTPUT_TIMEOUT = 30000;
-
+	
+	//if ola sends WORKAROUND_BLACK_PIXEL_COUNT times a black frame, we assume it is so!
+	private static final int WORKAROUND_BLACK_PIXEL_COUNT = 2;
+	
 	private static final Logger LOG = Logger.getLogger(Runner.class.getName());
 
 	private static Config cfg = null;
@@ -42,6 +45,8 @@ public class Runner {
 	private static long lastErrorMessage=0;
 	private static long lastDebugOutput=0;		
 	
+	//sometimes ola sends only black pixel
+	private static int workaroundOlaSendsOnlyBlackPixel = 0;
 
 	/**
 	 * 
@@ -111,7 +116,8 @@ public class Runner {
 	 * @param framerate
 	 */
 	private static void eventLoop(OlaClient olaClient, Framerate framerate) {
-		int currentUniverse=0;				
+		int currentUniverse=0;	
+		int totalUniverse = cfg.getDmxToOffsetMap().size();
 		for (Map.Entry<Integer,Integer> e: cfg.getDmxToOffsetMap().entrySet()) {
 			long t1 = System.currentTimeMillis();
 			DmxData reply = olaClient.getDmx(e.getKey());					
@@ -119,13 +125,29 @@ public class Runner {
 			short[] dmxData = olaClient.convertFromUnsigned(reply.getData());					
 
 			if (cfg.isDebugOutput()) {
-				debugln("Time to get data from universe "+e.getKey()+": "+t2+"ms");
+		//		debugln("Time to get data from universe "+e.getKey()+": "+t2+"ms");
 			}
 
 			if (dmxData.length>0) {
+
+				//ola workarround start here
+/*				int ecnt=0;
+				for (short i: dmxData) {
+					if (i==0) ecnt++;
+				}
+				System.out.println(ecnt+" "+dmxData.length);
+				if (ecnt==512) {
+					workaroundOlaSendsOnlyBlackPixel++;
+					if (workaroundOlaSendsOnlyBlackPixel<WORKAROUND_BLACK_PIXEL_COUNT) {
+						continue;
+					}
+				}*/
+				//ola workarround ends
+				
+				workaroundOlaSendsOnlyBlackPixel = 0;
 				debug(StatisticHelper.INSTANCE.getFrameCount()+" send "+dmxData.length+" bytes to universe "+currentUniverse);
 
-				byte[] data = Tpm2Protocol.doProtocol(dmxData, currentUniverse, cfg.getDmxToOffsetMap().size());
+				byte[] data = Tpm2Protocol.doProtocol(dmxData, currentUniverse, totalUniverse);
 				cfg.getOutput().sendData(currentUniverse, data);
 
 				StatisticHelper.INSTANCE.incrementAndGetPacketsRecieved();

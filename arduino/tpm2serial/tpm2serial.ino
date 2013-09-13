@@ -61,15 +61,6 @@ uint8_t totalPacket;
 
 CRGB leds[NUM_LEDS];
 
-/*
-Example:
-Universe1: 170 Pixel
-Universe2: 85 Pixel
-Universe3: 170 Pixel
-Universe4: 85 Pixel
- */
-uint16_t PIXEL_OFFSET[TOTAL_PACKET_SIZE] = {0, 170, 256, 426};
-
 // Teensy 3.0 has the LED on pin 13
 const int ledPin = 13;
 
@@ -111,7 +102,7 @@ void loop() {
   int16_t res = readCommand();
   if (res > 0) {
 #ifdef DEBUG      
-    Serial.print("FINE: ");
+    Serial.print(" OK");
     Serial.print(psize, DEC);    
     Serial.print("/");
     Serial.print(currentPacket, DEC);    
@@ -126,7 +117,7 @@ void loop() {
   else {
     if (res!=-1) {
       Serial.print("ERR: ");
-      Serial.println(res, DEC);    
+      Serial.print(res, DEC);    
       Serial.send_now();
     }
   }
@@ -140,7 +131,7 @@ void updatePixels() {
   uint8_t nrOfPixels = psize/3;
   
   uint16_t ofs=0;
-  uint16_t ledOffset = PIXEL_OFFSET[currentPacket];
+  uint16_t ledOffset = 170*currentPacket;
   
   for (uint16_t i=0; i<nrOfPixels; i++) {
     leds[i+ledOffset] = CRGB(packetBuffer[ofs++], packetBuffer[ofs++], packetBuffer[ofs++]);    
@@ -149,14 +140,16 @@ void updatePixels() {
   //update only if all data packets recieved
   if (currentPacket==totalPacket-1) {
 #ifdef DEBUG      
-    Serial.println("DRAW!");
+    Serial.print("DRW");
     Serial.send_now();
 #endif    
     LEDS.show();
   } else {
 #ifdef DEBUG      
-    Serial.print("NOTUPDATE: ");
-    Serial.println(currentPacket, DEC);
+    Serial.print("WAIT:");
+    Serial.print(currentPacket, DEC);
+    Serial.print(":");
+    Serial.print(totalPacket, DEC);
     Serial.send_now();
 #endif        
   }
@@ -209,8 +202,11 @@ int16_t readCommand() {
 // --------------------------------------------
 void showInitImage() {
   for (int i = 0 ; i < NUM_LEDS; i++ ) {
-    leds[i] = CRGB(i&255, (i>>1)&255, (i>>2)&255);
+    leds[i] = CRGB(0,0,0);
   }
+  leds[0] = CRGB(255,0,0);
+  leds[1] = CRGB(0,255,0);
+  leds[2] = CRGB(0,0,255);
   LEDS.show();
 }
 
