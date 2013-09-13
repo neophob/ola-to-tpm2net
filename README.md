@@ -26,8 +26,9 @@ Map DMX Universe 10 to offset 0, Universe 11 to offset 1 and Universe 12 to offs
 
 	./run.sh -u 10:0 -u 11:1 -u 12:2 -d /dev/ttyACM0 
 	
-The application grabs all Pixeldata from Universe 10 and sends it out using the TPM2Net protocol. My Arduino firmware will assign the pixeldata to the correct offset. One universe contains data up to 170 RGB pixels - so the Arduino firmware needs to add 170 for offset 1.
+The application grabs all Pixeldata from Universe 10,11 and 12 and sends it out using the TPM2Net protocol. My Arduino firmware will assign the pixeldata to the correct offset. One universe contains data up to 170 RGB pixels - so the Arduino firmware needs to add 170 for offset 1.
 
+Antother example with *debug* output:
 Limit to 10 fps (frames per second) and log verbose data.
 
 	./run.sh -u 10:0 -u 11:1 -u 12:2 -d /dev/ttyACM0 -f 10 -v
@@ -71,7 +72,7 @@ pi@STREAMER ~ $ ls /dev/ttyAC*
 crw------- 1 root root      4,  9 Jan  1  1970 /dev/tty9
 crw-rw---T 1 root dialout 204, 64 Jan  1  1970 /dev/ttyACM0
 ```
-If this device does not exist, make sure the `cdc_acm` module is loaded. 
+If the device `/dev/ttyACM0` does not exist, make sure the `cdc_acm` module is loaded. 
 Hint: Some OLA distributions blacklist this device, check if you have a module called `/etc/modprobe.d/eurolite-dmx.conf` and remove it.
 
 #### Install Daemon on RPI (run on boot)
@@ -127,7 +128,7 @@ Now reboot the RPi and verify the daemon is running after the reboot.
 
 Tested on a Teensy 3, *might* work on other hardware too, but untested. Keep an eye on the memory usage!
 
-You need to have the [FastSPI LED2 Library](https://code.google.com/p/fastspi/downloads/list) installed (I used RC2). Grab the TPM2Net Arduino firmware from the `arduino` directory.
+You need to have the [FastSPI LED2 Library](https://code.google.com/p/fastspi/downloads/list) installed (I used RC2). Grab the TPM2Net Arduino firmware from the `arduino` directory. Start the Arduino IDE and upload the firmware. The firmware supports up to 512 RGB pixels out of the box - if you need more, adjust the `#define NUM_LEDS 512` definition.
 
 	
 ## Performance
