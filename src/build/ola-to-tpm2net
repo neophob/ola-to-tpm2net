@@ -13,9 +13,9 @@
 # Description:       graps DMX data from OLA and send it to the serial port 
 ### END INIT INFO
 
-JAVA_HOME="/usr/local/java/"
-args="-p 65506 -b 1 -t 4 -d 5"
-application_dir="/home/pi/ola-to-tpm2net/"
+JAVA_HOME="/opt/java/jdk1.8.0/"
+args="-u 10:0 -u 11:1 -u 12:2 -d /dev/ttyACM0"
+application_dir="/home/pi/ola-to-serial-1.0/"
 logfile="${application_dir}ola-to-tpm2net.log"
 runnable="com.neophob.ola2uart.Runner"
 pid=""
@@ -26,7 +26,7 @@ do_start () {
         exit 1
     else
         if [ ! -x "${JAVA_HOME}/bin/java" ] ; then
-            echo "Java binary error: not found or not executable"
+            echo "${JAVA_HOME}/bin/java binary error: not found or not executable"
             exit 1
         fi
     fi
@@ -39,7 +39,7 @@ do_start () {
     # Launch the process
     local exit_code=10
     while [ $exit_code -eq 10 ]; do
-        nohup "${JAVA_HOME}/bin/java" ${opts} -cp "${path}" ${runnable} ${args} >> ${logfile} 2>&1 &
+        nohup "${application_dir}/run.sh" ${opts} ${args} >> ${logfile} 2>&1 &        
         exit_code=$?
     done
 }
