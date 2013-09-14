@@ -85,7 +85,9 @@ public class Runner {
 		for (Map.Entry<Integer,Integer> e: cfg.getDmxToOffsetMap().entrySet()) {
 			UniverseInfoReply u = olaClient.getUniverseInfo(e.getKey());
 			try {
-				LOG.finest(u.toString());
+				if (cfg.isDebugOutput()) {
+					LOG.info(u.toString());					
+				}
 			} catch (NullPointerException npe) {
 				LOG.severe("Universe "+e.getKey()+" does not exist, check your OLA configuration!");
 				System.exit(7);
