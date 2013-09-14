@@ -72,10 +72,14 @@ public class Runner {
 
 		cfg = new Config(args);
 
+		LOG.info("Connect to OLA...");
 		OlaClient olaClient=OlaHelper.connectToOlad();
 
-		PluginListReply replyPlugins = olaClient.getPlugins();        
-		LOG.finest(replyPlugins.toString());        
+		if (cfg.isVerboseDebugOutput()) {
+			PluginListReply replyPlugins = olaClient.getPlugins();
+			LOG.info("Loaded OLA Plugins:");
+			LOG.info(replyPlugins.toString());        			
+		}
 
 		LOG.info("Verify DMX Universe");
 		for (Map.Entry<Integer,Integer> e: cfg.getDmxToOffsetMap().entrySet()) {
