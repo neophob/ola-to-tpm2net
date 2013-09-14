@@ -67,8 +67,8 @@ public class Runner {
 	 * @param args
 	 */
 	public static void main(String[] args) throws Exception {		
-		LOG.info("OLA-to-TPM2.net Daemon v"+VERSION+" by Michael Vogt / neophob.com");
-		LOG.info("Read DMX universe from OLA and send the as TPM2 packet to the serial port");
+		System.out.println("OLA-to-TPM2.net Daemon v"+VERSION+" by Michael Vogt / neophob.com");
+		System.out.println("Read DMX universe from OLA and send the as TPM2 packet to the serial port");
 
 		cfg = new Config(args);
 
@@ -124,25 +124,29 @@ public class Runner {
 			long t2 = System.currentTimeMillis()-t1;
 			short[] dmxData = olaClient.convertFromUnsigned(reply.getData());					
 
-			if (cfg.isDebugOutput()) {
-		//		debugln("Time to get data from universe "+e.getKey()+": "+t2+"ms");
+			if (cfg.isVerboseDebugOutput()) {
+				debugln("Time to get data from universe "+e.getKey()+": "+t2+"ms");
 			}
 
 			if (dmxData.length>0) {
 
-				//ola workarround start here
-/*				int ecnt=0;
-				for (short i: dmxData) {
-					if (i==0) ecnt++;
-				}
-				System.out.println(ecnt+" "+dmxData.length);
-				if (ecnt==512) {
-					workaroundOlaSendsOnlyBlackPixel++;
-					if (workaroundOlaSendsOnlyBlackPixel<WORKAROUND_BLACK_PIXEL_COUNT) {
-						continue;
+				if (cfg.isOlaWorkaround()) {
+					//ola workarround start here
+					int ecnt=0;
+					for (short i: dmxData) {
+						if (i==0) ecnt++;
 					}
-				}*/
-				//ola workarround ends
+					if (cfg.isVerboseDebugOutput()) {
+						System.out.println(ecnt+" zero channels of total "+dmxData.length+" channels");						
+					}					
+					if (ecnt==512) {
+						workaroundOlaSendsOnlyBlackPixel++;
+						if (workaroundOlaSendsOnlyBlackPixel<WORKAROUND_BLACK_PIXEL_COUNT) {
+							continue;
+						}
+					}
+					//ola workarround ends					
+				}
 				
 				workaroundOlaSendsOnlyBlackPixel = 0;
 				debug(StatisticHelper.INSTANCE.getFrameCount()+" send "+dmxData.length+" bytes to universe "+currentUniverse);

@@ -14,7 +14,7 @@
 ### END INIT INFO
 
 JAVA_HOME="/opt/java/jdk1.8.0/"
-args="-u 10:0 -u 11:1 -u 12:2 -d /dev/ttyACM0"
+args="-u 11:0 -u 12:1 -d /dev/ttyACM0"
 application_dir="/home/pi/ola-to-serial-1.0/"
 logfile="${application_dir}ola-to-tpm2net.log"
 runnable="com.neophob.ola2uart.Runner"

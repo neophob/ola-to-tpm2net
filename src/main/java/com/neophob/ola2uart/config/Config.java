@@ -21,7 +21,9 @@ public class Config {
 	private int fps = DEFAULT_FPS;
 	private Map<Integer, Integer> dmxToOffsetMap = new HashMap<Integer, Integer>();
 	
+	private boolean olaWorkaround=false;
 	private boolean debugOutput=false;
+	private boolean verboseDebugOutput=false;
 	
 	public Config(String[] args) {
 		//prevalidate
@@ -64,13 +66,14 @@ public class Config {
 	}
 	
 	private void displayHelp() {
-		LOG.info("Usage:\tRunner -u 0:0 -u 1:1 -d /dev/tty.usbmodem.1234 [-f 20]");
-		LOG.info("");
-		LOG.info("      \t -u define DMX Universe to offset mapping (can be used multiple times)");
-		LOG.info("      \t -d usb device that recieve the data using the tpm2.net protocol");
-		LOG.info("      \t -f desired framerate (fps)");
-		LOG.info("      \t -v enable verbose output");
-		LOG.info("Make sure OLAD is running on 127.0.0.1:9010");
+		System.out.println("Usage:\tRunner -u 0:0 -u 1:1 -d /dev/tty.usbmodem.1234 [-f 20]\n");
+		System.out.println("      \t -u define DMX Universe to offset mapping (can be used multiple times)");
+		System.out.println("      \t -d usb device that recieve the data using the tpm2.net protocol");
+		System.out.println("      \t -f desired framerate (fps)");
+		System.out.println("      \t -v enable verbose output");
+		System.out.println("      \t -vv enable very verbose output");
+		System.out.println("      \t -w enable workarround mode, only set all channels to black if the packet was send 3 times");
+		System.out.println("Make sure OLAD is running on 127.0.0.1:9010");
 	}
 
 	private void parseArguments(String[] args) {
@@ -109,10 +112,22 @@ public class Config {
         		}
         	}
 
+        	if (arg.equals("-vv")) {
+        		LOG.info("enable very verbose mode");
+        		debugOutput = true;
+        		verboseDebugOutput = true;
+        	}
+
         	if (arg.equals("-v")) {
         		LOG.info("enable verbose mode");
         		debugOutput = true;
         	}
+        	
+        	if (arg.equals("-w")) {
+        		LOG.info("enable ola workaround mode");
+        		olaWorkaround = true;
+        	}
+        	
         	
         	if (arg.equals("-u")) {
         		if (i < args.length) { 
@@ -131,6 +146,10 @@ public class Config {
         }		
 	}
 
+	public boolean isVerboseDebugOutput() {
+		return verboseDebugOutput;
+	}
+
 	public IOutput getOutput() {
 		return output;
 	}
@@ -145,6 +164,10 @@ public class Config {
 
 	public boolean isDebugOutput() {
 		return debugOutput;
+	}
+
+	public boolean isOlaWorkaround() {
+		return olaWorkaround;
 	}
 	
 	

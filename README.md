@@ -75,7 +75,7 @@ crw-rw---T 1 root dialout 204, 64 Jan  1  1970 /dev/ttyACM0
 If the device `/dev/ttyACM0` does not exist, make sure the `cdc_acm` module is loaded. 
 Hint: Some OLA distributions blacklist this device, check if you have a module called `/etc/modprobe.d/eurolite-dmx.conf` and remove it.
 
-#### Install Daemon on RPI (run on boot)
+#### Install ola-to-tpm2net Daemon on RPI (run on boot)
 Copy the release to your homedirectory of your RPi and unpack it:
 
 ```
@@ -113,7 +113,7 @@ update-rc.d: using dependency based boot sequencing
 update-rc.d: warning: default stop runlevel arguments (0 1 6) do not match ola-to-tpm2net Default-Stop values (none)
 ```
 	
-Test if the daemon can started:
+Test if the daemon can be started:
 
 ```
 pi@STREAMER ~/ola-to-serial-1.0 $ sudo /etc/init.d/ola-to-tpm2net start
@@ -124,12 +124,73 @@ pi       10774  0.0  0.3   4080   852 pts/2    S+   00:05   0:00 grep --color=au
 ```
 Now reboot the RPi and verify the daemon is running after the reboot.
 
+#### Usage
+
+```
+pi@raspberrypi ~/ola-to-serial-1.0 $ ./run.sh 
+OLA-to-TPM2.net Daemon v0.1 by Michael Vogt / neophob.com
+Read DMX universe from OLA and send the as TPM2 packet to the serial port
+Usage:  Runner -u 0:0 -u 1:1 -d /dev/tty.usbmodem.1234 [-f 20]
+
+         -u define DMX Universe to offset mapping (can be used multiple times)
+         -d usb device that recieve the data using the tpm2.net protocol
+         -f desired framerate (fps)
+         -v enable verbose output
+         -vv enable very verbose output
+         -w enable workarround mode, only set all channels to black if the packet was send 3 times
+Make sure OLAD is running on 127.0.0.1:9010
+```
+
 ###Setup Teensy 3
 
 Tested on a Teensy 3, *might* work on other hardware too, but untested. Keep an eye on the memory usage!
 
 You need to have the [FastSPI LED2 Library](https://code.google.com/p/fastspi/downloads/list) installed (I used RC2). Grab the TPM2Net Arduino firmware from the `arduino` directory. Start the Arduino IDE and upload the firmware. The firmware supports up to 512 RGB pixels out of the box - if you need more, adjust the `#define NUM_LEDS 512` definition.
 
+###Setup OLA
+You do not need to configure an output device, all you need are some input plugins. I used two E1.31/sACN input devices and assigned them Universe 11 and 12. 
+
+Example, start OLA:
+
+```
+pi@raspberrypi ~ $ olad -l3
+Olad.cpp:86: OLA Daemon version 0.8.31
+OlaDaemon.cpp:103: Using configs in /home/pi/.ola
+OlaServer.cpp:466: Updated PID definitions.
+OlaServer.cpp:199: Server UID is 7a70:166fa8c0
+PluginManager.cpp:77: Skipping ArtNet because it was disabled
+PluginManager.cpp:77: Skipping Dummy because it was disabled
+PluginManager.cpp:77: Skipping ESP Net because it was disabled
+PluginManager.cpp:77: Skipping KarateLight because it was disabled
+PluginManager.cpp:77: Skipping KiNET because it was disabled
+PluginManager.cpp:77: Skipping Milford Instruments because it was disabled
+PluginManager.cpp:77: Skipping Enttec Open DMX because it was disabled
+PluginManager.cpp:77: Skipping SandNet because it was disabled
+PluginManager.cpp:77: Skipping ShowNet because it was disabled
+PluginManager.cpp:77: Skipping SPI because it was disabled
+PluginManager.cpp:77: Skipping StageProfi because it was disabled
+PluginManager.cpp:77: Skipping Serial USB because it was disabled
+PluginManager.cpp:77: Skipping Pathport because it was disabled
+PluginManager.cpp:108: Trying to start E1.31 (sACN)
+DeviceManager.cpp:111: Installed device: E1.31 (DMX over ACN) [192.168.1.2]:11-1
+PluginManager.cpp:112: Started E1.31 (sACN)
+```
+
+Patch Universe 11 and 12 to the E1.31/sACN device:
+
+```
+pi@raspberrypi ~ $ ola_dev_info                                                                                                                                    
+Device 1: E1.31 (DMX over ACN) [192.168.1.2]
+  port 0, IN, priority inherited
+  port 1, IN, priority inherited
+pi@raspberrypi ~ $ ola_patch -d 1 -p 0 -u 11 -i
+pi@raspberrypi ~ $ ola_patch -d 1 -p 1 -u 12 -i
+pi@raspberrypi ~ $ ola_dev_info 
+Device 1: E1.31 (DMX over ACN) [192.168.1.2]
+  port 0, IN E1.31 Universe 11, priority inherited, patched to universe 11
+  port 1, IN E1.31 Universe 12, priority inherited, patched to universe 12
+pi@raspberrypi ~ $ 
+```
 	
 ## Performance
 
@@ -137,13 +198,7 @@ See [OLA ticket 251](https://code.google.com/p/open-lighting/issues/detail?id=25
 
 I tested it on a RPi Model B using 20fps and 256 RGB Pixels. This application used 30-40% of the CPU.
 
-Java Version:
-
-	java version "1.8.0-ea"
-	Java(TM) SE Runtime Environment (build 1.8.0-ea-b36e)
-	Java HotSpot(TM) Client VM (build 25.0-b04, mixed mode)
-
-## Compile yourself
+## Compile OLA-TO-TPM2NET yourself
 
 Make sure you have maven and a JDK setup correctly. Enter
 
