@@ -12,7 +12,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <protobuf.version>2.4.1</protobuf.version> 
+    <protobuf.version>3.16.1</protobuf.version> 
     <netty.version>3.6.4.Final</netty.version>
     <ola.version>0.0.1</ola.version>
   </properties>
